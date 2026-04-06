@@ -1,5 +1,6 @@
 # parallel/process_eval.py — V2
 import numpy as np
+import multiprocessing
 from concurrent.futures import ProcessPoolExecutor
 from .base_evaluator import FitnessEvaluator
 from objectives.base import ObjectiveFunction
@@ -43,6 +44,11 @@ class ProcessEvaluator(FitnessEvaluator):
     un bloque entero por tarea. Esto reduce el número de
     serializaciones y el overhead de IPC.
 
+    Nota Windows:
+    En Windows multiprocessing usa 'spawn' para crear procesos hijos,
+    lo que reimporta el módulo principal. Se usa get_context('spawn')
+    explícitamente para evitar problemas de recursión.
+
     Parameters
     ----------
     max_workers : número de procesos. None = usa os.cpu_count()
@@ -67,7 +73,8 @@ class ProcessEvaluator(FitnessEvaluator):
         batches = self._make_batches(positions)
         args = [(batch, objective_fn) for batch in batches]
 
-        with ProcessPoolExecutor(max_workers=self.max_workers) as executor:
+        ctx = multiprocessing.get_context("spawn")
+        with ProcessPoolExecutor(max_workers=self.max_workers, mp_context=ctx) as executor:
             results = list(executor.map(_evaluate_batch, args))
 
         fitnesses = [fit for batch_result in results for fit in batch_result]
