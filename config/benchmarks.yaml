@@ -1,0 +1,71 @@
+# config/benchmarks.yaml
+# Instancias reproducibles para la suite de benchmarks
+
+instances:
+  - name: Sphere_d2
+    function: sphere
+    dim: 2
+    seed: 42
+
+  - name: Sphere_d10
+    function: sphere
+    dim: 10
+    seed: 42
+
+  - name: Sphere_d30
+    function: sphere
+    dim: 30
+    seed: 42
+
+  - name: Rosenbrock_d2
+    function: rosenbrock
+    dim: 2
+    seed: 42
+
+  - name: Rosenbrock_d10
+    function: rosenbrock
+    dim: 10
+    seed: 42
+
+  - name: Rosenbrock_d30
+    function: rosenbrock
+    dim: 30
+    seed: 42
+
+  - name: Rastrigin_d2
+    function: rastrigin
+    dim: 2
+    seed: 42
+
+  - name: Rastrigin_d10
+    function: rastrigin
+    dim: 10
+    seed: 42
+
+  - name: Rastrigin_d30
+    function: rastrigin
+    dim: 30
+    seed: 42
+
+  - name: Ackley_d2
+    function: ackley
+    dim: 2
+    seed: 42
+
+  - name: Ackley_d10
+    function: ackley
+    dim: 10
+    seed: 42
+
+  - name: Ackley_d30
+    function: ackley
+    dim: 30
+    seed: 42
+
+grid_search:
+  param_grid:
+    w:           [0.4, 0.7, 0.9]
+    c1:          [1.0, 1.5, 2.0]
+    c2:          [1.0, 1.5, 2.0]
+    n_particles: [30]
+  seeds: [42, 123, 456, 789, 1000]

@@ -1,0 +1,20 @@
+# config/default.yaml
+# Configuración por defecto del PSO
+
+pso:
+  n_particles: 30
+  w: 0.7
+  c1: 1.5
+  c2: 1.5
+  max_iter: 200
+  tol: 1.0e-6
+  stagnation_patience: 50
+  stagnation_tol: 1.0e-8
+  seed: 42
+
+evaluator: sequential   # opciones: sequential, threading, process
+
+output:
+  results_dir: results
+  save_json: true
+  save_csv: true
