@@ -17,7 +17,7 @@ from parallel.sequential import SequentialEvaluator
 from parallel.threading_eval import ThreadingEvaluator
 from parallel.process_eval import ProcessEvaluator
 from experiments.grid_search import run_grid_search
-from io.persistence import save_result
+from storage.persistence import save_result
 
 logging.basicConfig(
     level=logging.INFO,

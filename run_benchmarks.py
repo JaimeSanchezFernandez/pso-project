@@ -14,7 +14,7 @@ from experiments.runner import run_experiment
 from parallel.sequential import SequentialEvaluator
 from parallel.threading_eval import ThreadingEvaluator
 from parallel.process_eval import ProcessEvaluator
-from io.persistence import save_result
+from storage.persistence import save_result
 
 logging.basicConfig(
     level=logging.INFO,
