@@ -6,6 +6,8 @@ Uso:
     python make_viz.py --type convergence
     python make_viz.py --type speedup
     python make_viz.py --type swarm --fn sphere --dim 2
+    python make_viz.py --type all_functions --dim 10
+    python make_viz.py --type boxplot --dim 10
 """
 import argparse
 import logging
@@ -18,7 +20,7 @@ from parallel.sequential import SequentialEvaluator
 from parallel.threading_eval import ThreadingEvaluator
 from parallel.process_eval import ProcessEvaluator
 from experiments.runner import run_experiment
-from viz.convergence import plot_convergence, plot_speedup
+from viz.convergence import plot_convergence, plot_speedup, plot_convergence_all_functions, plot_boxplot
 from viz.swarm_plot import animate_swarm_2d
 
 logging.basicConfig(
@@ -39,12 +41,14 @@ EVALUATORS = {
     "V2_Process":    ProcessEvaluator,
 }
 
+SEEDS = [42, 123, 456, 789, 1000]
+
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Generar visualizaciones PSO")
     parser.add_argument(
         "--type", type=str, default="convergence",
-        choices=["convergence", "speedup", "swarm"],
+        choices=["convergence", "speedup", "swarm", "all_functions", "boxplot"],
         help="Tipo de visualización"
     )
     parser.add_argument("--fn",   type=str, default="sphere", choices=FUNCTIONS.keys())
@@ -58,7 +62,6 @@ def viz_convergence(args: argparse.Namespace) -> None:
     """Compara curvas de convergencia de V0, V1 y V2."""
     objective_fn = FUNCTIONS[args.fn](dim=args.dim)
     histories: dict[str, list[float]] = {}
-    times: dict[str, float] = {}
 
     for name, EvalClass in EVALUATORS.items():
         evaluator = EvalClass()
@@ -68,7 +71,6 @@ def viz_convergence(args: argparse.Namespace) -> None:
             seed=args.seed,
         )
         histories[name] = result["fitness_history"]
-        times[name] = result["elapsed_seconds"]
         print(
             f"{name}: gbest={result['gbest_fit']:.4e} | "
             f"t_total={result['elapsed_seconds']:.3f}s | "
@@ -104,6 +106,68 @@ def viz_speedup(args: argparse.Namespace) -> None:
     plot_speedup(
         times,
         title=f"Speedup — {args.fn} d={args.dim}",
+        output_path=output_path,
+    )
+
+
+def viz_all_functions(args: argparse.Namespace) -> None:
+    """Convergencia de V0 en las 4 funciones benchmark en un solo plot 2x2."""
+    evaluator = SequentialEvaluator()
+    results: dict[str, dict[str, list[float]]] = {}
+
+    for fn_name, FnClass in FUNCTIONS.items():
+        objective_fn = FnClass(dim=args.dim)
+        results[f"{fn_name} d={args.dim}"] = {}
+
+        for eval_name, EvalClass in EVALUATORS.items():
+            evaluator = EvalClass()
+            result = run_experiment(
+                objective_fn=objective_fn,
+                evaluator=evaluator,
+                seed=args.seed,
+            )
+            results[f"{fn_name} d={args.dim}"][eval_name] = result["fitness_history"]
+            print(f"{fn_name} d={args.dim} | {eval_name}: gbest={result['gbest_fit']:.4e}")
+
+    output_path = f"results/all_functions_d{args.dim}.png" if args.save else None
+    plot_convergence_all_functions(
+        results,
+        title=f"Convergencia por función — d={args.dim}",
+        output_path=output_path,
+    )
+
+
+def viz_boxplot(args: argparse.Namespace) -> None:
+    """
+    Boxplot del fitness final sobre múltiples seeds.
+    Muestra la distribución de resultados de cada estrategia
+    para cada función benchmark.
+    """
+    results_by_strategy: dict[str, dict[str, list[float]]] = {}
+
+    for fn_name, FnClass in FUNCTIONS.items():
+        objective_fn = FnClass(dim=args.dim)
+        results_by_strategy[f"{fn_name} d={args.dim}"] = {
+            name: [] for name in EVALUATORS
+        }
+
+        for seed in SEEDS:
+            for eval_name, EvalClass in EVALUATORS.items():
+                evaluator = EvalClass()
+                result = run_experiment(
+                    objective_fn=objective_fn,
+                    evaluator=evaluator,
+                    seed=seed,
+                )
+                results_by_strategy[f"{fn_name} d={args.dim}"][eval_name].append(
+                    result["gbest_fit"]
+                )
+                print(f"{fn_name} d={args.dim} | {eval_name} | seed={seed}: gbest={result['gbest_fit']:.4e}")
+
+    output_path = f"results/boxplot_d{args.dim}.png" if args.save else None
+    plot_boxplot(
+        results_by_strategy,
+        title=f"Distribución fitness final — d={args.dim} ({len(SEEDS)} seeds)",
         output_path=output_path,
     )
 
@@ -148,6 +212,10 @@ def main() -> None:
         viz_speedup(args)
     elif args.type == "swarm":
         viz_swarm(args)
+    elif args.type == "all_functions":
+        viz_all_functions(args)
+    elif args.type == "boxplot":
+        viz_boxplot(args)
 
 
 if __name__ == "__main__":
