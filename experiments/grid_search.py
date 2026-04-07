@@ -1,75 +1,75 @@
 # experiments/grid_search.py
 import itertools
 import logging
-from experiments.runner import run_experiment
-from objectives.base import ObjectiveFunction
-from parallel.base_evaluator import FitnessEvaluator
+from experiments.runner import ejecutar_experimento
+from objectives.functions import ObjectiveFunction
+from parallel.sequential import FitnessEvaluator
 
 logger = logging.getLogger(__name__)
 
 
-def run_grid_search(
-    objective_fn: ObjectiveFunction,
-    evaluator: FitnessEvaluator,
-    param_grid: dict,
-    seeds: list[int] = None,
+def busqueda_grid(
+    funcion_objetivo: ObjectiveFunction,
+    evaluador: FitnessEvaluator,
+    param_grid: dict[str, list],
+    semillas: list[int] | None = None,
 ) -> list[dict]:
     """
     Ejecuta un grid search sobre los hiperparámetros del PSO.
 
     Parameters
     ----------
-    objective_fn : función objetivo a optimizar
-    evaluator    : estrategia de evaluación (V0, V1, V2)
-    param_grid   : diccionario con listas de valores por parámetro.
-                   Claves soportadas: w, c1, c2, n_particles
-                   Ejemplo:
-                   {
-                       "w":           [0.4, 0.7, 0.9],
-                       "c1":          [1.0, 1.5, 2.0],
-                       "c2":          [1.0, 1.5, 2.0],
-                       "n_particles": [20, 30]
-                   }
-    seeds        : lista de seeds para repetir cada combinación.
-                   Permite calcular media y desviación típica.
+    funcion_objetivo : función objetivo a optimizar
+    evaluador        : estrategia de evaluación (V0, V1, V2)
+    param_grid       : diccionario con listas de valores por parámetro.
+                       Ejemplo:
+                       {
+                           "w":            [0.4, 0.7, 0.9],
+                           "c1":           [1.0, 1.5, 2.0],
+                           "c2":           [1.0, 1.5, 2.0],
+                           "num_particulas": [20, 30]
+                       }
+    semillas         : lista de semillas para repetir cada combinación.
 
     Returns
     -------
     Lista de dicts, uno por cada combinación (parámetros + métricas).
     """
-    if seeds is None:
-        seeds = [42]
+    if semillas is None:
+        semillas = [42]
 
-    # Genera todas las combinaciones posibles
-    keys = list(param_grid.keys())
-    values = list(param_grid.values())
-    combinations = list(itertools.product(*values))
+    claves = list(param_grid.keys())
+    valores = list(param_grid.values())
+    combinaciones = list(itertools.product(*valores))
 
-    total = len(combinations) * len(seeds)
-    logger.info(f"Grid search | combinaciones={len(combinations)} | seeds={len(seeds)} | total runs={total}")
+    total = len(combinaciones) * len(semillas)
+    logger.info(
+        f"Grid search | combinaciones={len(combinaciones)} | "
+        f"semillas={len(semillas)} | total={total}"
+    )
 
-    results = []
-    run_idx = 0
+    resultados = []
+    num_run = 0
 
-    for combo in combinations:
-        params = dict(zip(keys, combo))
+    for combo in combinaciones:
+        params = dict(zip(claves, combo))
 
-        for seed in seeds:
-            run_idx += 1
-            logger.info(f"Run {run_idx}/{total} | params={params} | seed={seed}")
+        for semilla in semillas:
+            num_run += 1
+            logger.info(f"Run {num_run}/{total} | params={params} | semilla={semilla}")
 
-            result = run_experiment(
-                objective_fn=objective_fn,
-                evaluator=evaluator,
+            resultado = ejecutar_experimento(
+                funcion_objetivo=funcion_objetivo,
+                evaluador=evaluador,
                 w=params.get("w", 0.7),
                 c1=params.get("c1", 1.5),
                 c2=params.get("c2", 1.5),
-                n_particles=params.get("n_particles", 30),
-                seed=seed,
+                num_particulas=params.get("num_particulas", 30),
+                semilla=semilla,
             )
 
-            result.update(params)
-            result["seed"] = seed
-            results.append(result)
+            resultado.update(params)
+            resultado["semilla"] = semilla
+            resultados.append(resultado)
 
-    return results
+    return resultados

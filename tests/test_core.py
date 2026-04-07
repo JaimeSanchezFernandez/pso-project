@@ -1,62 +1,62 @@
 # tests/test_core.py
 import numpy as np
 import pytest
-from core.swarm import Swarm
-from core.stopcriteria import MaxIterations
-from objectives.sphere import Sphere
+from core.swarm import Enjambre
+from core.stopcriteria import MaxIteraciones
+from objectives.functions import Sphere
 from parallel.sequential import SequentialEvaluator
 
 
-def make_swarm(seed=42, max_iter=100):
-    return Swarm(
-        objective_fn=Sphere(dim=2),
-        evaluator=SequentialEvaluator(),
-        n_particles=20,
+def crear_enjambre(semilla=42, max_iter=100):
+    return Enjambre(
+        funcion_objetivo=Sphere(dim=2),
+        evaluador=SequentialEvaluator(),
+        num_particulas=20,
         w=0.7, c1=1.5, c2=1.5,
-        stop_criterion=MaxIterations(max_iter),
-        seed=seed,
+        criterio_parada=MaxIteraciones(max_iter),
+        semilla=semilla,
     )
 
 
-def test_reproducibility():
-    """Dos ejecuciones con la misma seed deben dar exactamente el mismo resultado."""
-    result1 = make_swarm(seed=42).run()
-    result2 = make_swarm(seed=42).run()
-    assert result1["gbest_fit"] == result2["gbest_fit"]
-    assert np.allclose(result1["gbest_pos"], result2["gbest_pos"])
+def test_reproducibilidad():
+    """Dos ejecuciones con la misma semilla deben dar exactamente el mismo resultado."""
+    resultado1 = crear_enjambre(semilla=42).ejecutar()
+    resultado2 = crear_enjambre(semilla=42).ejecutar()
+    assert resultado1["fitness_global"] == resultado2["fitness_global"]
+    assert np.allclose(resultado1["pos_global"], resultado2["pos_global"])
 
 
-def test_different_seeds_differ():
-    """Seeds distintas deben dar resultados distintos."""
-    result1 = make_swarm(seed=42).run()
-    result2 = make_swarm(seed=99).run()
-    assert result1["gbest_fit"] != result2["gbest_fit"]
+def test_semillas_distintas():
+    """Semillas distintas deben dar resultados distintos."""
+    resultado1 = crear_enjambre(semilla=42).ejecutar()
+    resultado2 = crear_enjambre(semilla=99).ejecutar()
+    assert resultado1["fitness_global"] != resultado2["fitness_global"]
 
 
-def test_monotonic_gbest():
+def test_monotonicidad_fitness_global():
     """El mejor global nunca debe empeorar entre iteraciones."""
-    result = make_swarm(seed=42, max_iter=200).run()
-    history = result["fitness_history"]
-    for i in range(1, len(history)):
-        assert history[i] <= history[i - 1] + 1e-12, (
-            f"gbest empeoró en iteración {i}: {history[i-1]} → {history[i]}"
+    resultado = crear_enjambre(semilla=42, max_iter=200).ejecutar()
+    historial = resultado["historial_fitness"]
+    for i in range(1, len(historial)):
+        assert historial[i] <= historial[i - 1] + 1e-12, (
+            f"fitness_global empeoró en iteración {i}: {historial[i-1]} → {historial[i]}"
         )
 
 
-def test_sphere_converges():
+def test_sphere_converge():
     """PSO debe converger cerca de 0 en Sphere(d=2) con parámetros razonables."""
-    result = make_swarm(seed=42, max_iter=500).run()
-    assert result["gbest_fit"] < 1e-3, (
-        f"Sphere no convergió suficiente: gbest_fit={result['gbest_fit']}"
+    resultado = crear_enjambre(semilla=42, max_iter=500).ejecutar()
+    assert resultado["fitness_global"] < 1e-3, (
+        f"Sphere no convergió suficiente: fitness_global={resultado['fitness_global']}"
     )
 
 
-def test_bounds_respected():
-    """Las posiciones finales deben estar dentro de los límites."""
-    swarm = make_swarm(seed=42, max_iter=100)
-    swarm._initialize()
-    lb = swarm.objective_fn.lower_bounds
-    ub = swarm.objective_fn.upper_bounds
-    for p in swarm.particles:
-        assert np.all(p.position >= lb), "Partícula fuera del límite inferior"
-        assert np.all(p.position <= ub), "Partícula fuera del límite superior"
+def test_limites_respetados():
+    """Las posiciones deben estar dentro de los límites."""
+    enjambre = crear_enjambre(semilla=42, max_iter=100)
+    enjambre._inicializar()
+    lb = enjambre.funcion_objetivo.lower_bounds
+    ub = enjambre.funcion_objetivo.upper_bounds
+    for p in enjambre.particulas:
+        assert np.all(p.posicion >= lb), "Partícula fuera del límite inferior"
+        assert np.all(p.posicion <= ub), "Partícula fuera del límite superior"

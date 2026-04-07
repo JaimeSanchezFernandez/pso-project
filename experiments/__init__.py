@@ -1,6 +1,6 @@
 # experiments/__init__.py
-from .runner import run_experiment
-from .grid_search import run_grid_search
+from .runner import ejecutar_experimento
+from .grid_search import busqueda_grid
 from .benchmark_suite import BENCHMARK_INSTANCES
 
-__all__ = ["run_experiment", "run_grid_search", "BENCHMARK_INSTANCES"]
+__all__ = ["ejecutar_experimento", "busqueda_grid", "BENCHMARK_INSTANCES"]

@@ -1,63 +1,62 @@
-# io/loader.py
+# storage/loader.py
 import json
-import csv
 import pandas as pd
 from pathlib import Path
 
 
-def load_result(json_path: str) -> dict:
+def cargar_resultado(ruta_json: str) -> dict:
     """
     Carga un resultado completo desde un fichero JSON.
 
     Parameters
     ----------
-    json_path : ruta al fichero JSON generado por save_result
+    ruta_json : ruta al fichero JSON generado por guardar_resultado
 
     Returns
     -------
-    dict con metadata y result completo (incluyendo fitness_history)
+    dict con metadata y resultado completo
     """
-    with open(json_path, "r", encoding="utf-8") as f:
+    with open(ruta_json, "r", encoding="utf-8") as f:
         return json.load(f)
 
 
-def load_all_results(results_dir: str = "results") -> list[dict]:
+def cargar_todos_resultados(carpeta_resultados: str = "results") -> list[dict]:
     """
     Carga todos los ficheros JSON de un directorio de resultados.
 
     Parameters
     ----------
-    results_dir : carpeta donde están los ficheros JSON
+    carpeta_resultados : carpeta donde están los ficheros JSON
 
     Returns
     -------
     Lista de dicts, uno por experimento
     """
-    path = Path(results_dir)
-    json_files = sorted(path.glob("*.json"))
+    ruta = Path(carpeta_resultados)
+    ficheros_json = sorted(ruta.glob("*.json"))
 
-    results = []
-    for f in json_files:
-        results.append(load_result(f))
+    resultados = []
+    for f in ficheros_json:
+        resultados.append(cargar_resultado(f))
 
-    return results
+    return resultados
 
 
-def load_summary(results_dir: str = "results") -> pd.DataFrame:
+def cargar_resumen(carpeta_resultados: str = "results") -> pd.DataFrame:
     """
     Carga el CSV resumen como un DataFrame de pandas.
 
-    Útil para comparar estrategias, hacer boxplots y tablas resumen.
-
     Parameters
     ----------
-    results_dir : carpeta donde está el summary.csv
+    carpeta_resultados : carpeta donde está el summary.csv
 
     Returns
     -------
     pd.DataFrame con una fila por experimento
     """
-    csv_path = Path(results_dir) / "summary.csv"
-    if not csv_path.exists():
-        raise FileNotFoundError(f"No se encontró {csv_path}. Ejecuta primero algún experimento.")
-    return pd.read_csv(csv_path)
+    ruta_csv = Path(carpeta_resultados) / "summary.csv"
+    if not ruta_csv.exists():
+        raise FileNotFoundError(
+            f"No se encontró {ruta_csv}. Ejecuta primero algún experimento."
+        )
+    return pd.read_csv(ruta_csv)

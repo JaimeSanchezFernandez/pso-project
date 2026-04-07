@@ -1,7 +1,7 @@
 # core/__init__.py
 from .particle import Particle
-from .swarm import Swarm
-from .topology import GlobalBest
-from .stopcriteria import MaxIterations, Tolerance, Stagnation
+from .swarm import Enjambre
+from .topology import MejorGlobal
+from .stopcriteria import MaxIteraciones, Tolerancia, Estancamiento
 
-__all__ = ["Particle", "Swarm", "GlobalBest", "MaxIterations", "Tolerance", "Stagnation"]
+__all__ = ["Particle", "Enjambre", "MejorGlobal", "MaxIteraciones", "Tolerancia", "Estancamiento"]

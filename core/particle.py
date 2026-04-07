@@ -1,5 +1,5 @@
 # core/particle.py
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 import numpy as np
 
 
@@ -10,25 +10,25 @@ class Particle:
 
     Attributes
     ----------
-    position  : posición actual en el espacio de búsqueda, shape (dim,)
-    velocity  : velocidad actual, shape (dim,)
-    pbest_pos : mejor posición personal encontrada hasta ahora, shape (dim,)
-    pbest_fit : fitness de la mejor posición personal
+    posicion      : posición actual en el espacio de búsqueda, shape (dim,)
+    velocidad     : velocidad actual, shape (dim,)
+    mejor_pos     : mejor posición personal encontrada hasta ahora, shape (dim,)
+    mejor_fitness : fitness de la mejor posición personal
     """
 
-    position: np.ndarray
-    velocity: np.ndarray
-    pbest_pos: np.ndarray
-    pbest_fit: float = float("inf")
+    posicion: np.ndarray
+    velocidad: np.ndarray
+    mejor_pos: np.ndarray
+    mejor_fitness: float = float("inf")
 
-    def update_personal_best(self, fitness: float) -> None:
-        """Actualiza pbest si el fitness actual es mejor (menor)."""
-        if fitness < self.pbest_fit:
-            self.pbest_fit = fitness
-            self.pbest_pos = self.position.copy()
+    def actualizar_mejor(self, fitness: float) -> None:
+        """Actualiza mejor_pos si el fitness actual es mejor (menor)."""
+        if fitness < self.mejor_fitness:
+            self.mejor_fitness = fitness
+            self.mejor_pos = self.posicion.copy()
 
     def __repr__(self) -> str:
         return (
-            f"Particle(pbest_fit={self.pbest_fit:.6f}, "
-            f"pos={self.position})"
+            f"Particle(mejor_fitness={self.mejor_fitness:.6f}, "
+            f"posicion={self.posicion})"
         )

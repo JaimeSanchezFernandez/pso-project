@@ -3,7 +3,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.animation as animation
 from pathlib import Path
-from objectives.base import ObjectiveFunction
+from objectives.functions import ObjectiveFunction
 
 
 def animate_swarm_2d(

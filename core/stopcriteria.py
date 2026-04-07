@@ -3,65 +3,65 @@ from abc import ABC, abstractmethod
 import numpy as np
 
 
-class StopCriterion(ABC):
-    """Contrato base para los criterios de parada."""
+class CriterioParada(ABC):
+    """Clase base para los criterios de parada."""
 
     @abstractmethod
-    def should_stop(self, iteration: int, best_fit: float, fitness_history: list[float]) -> bool:
+    def debe_parar(self, iteracion: int, mejor_fitness: float, historial: list[float]) -> bool:
         ...
 
     @abstractmethod
-    def reset(self) -> None:
-        """Resetea el estado interno (necesario entre ejecuciones)."""
+    def reiniciar(self) -> None:
+        """Resetea el estado interno entre ejecuciones."""
         ...
 
 
-class MaxIterations(StopCriterion):
+class MaxIteraciones(CriterioParada):
     """Para cuando se alcanza el número máximo de iteraciones."""
 
-    def __init__(self, max_iter: int):
+    def __init__(self, max_iter: int) -> None:
         self.max_iter = max_iter
 
-    def should_stop(self, iteration: int, best_fit: float, fitness_history: list[float]) -> bool:
-        return iteration >= self.max_iter
+    def debe_parar(self, iteracion: int, mejor_fitness: float, historial: list[float]) -> bool:
+        return iteracion >= self.max_iter
 
-    def reset(self) -> None:
+    def reiniciar(self) -> None:
         pass
 
 
-class Tolerance(StopCriterion):
+class Tolerancia(CriterioParada):
     """Para cuando el mejor fitness cae por debajo de un umbral."""
 
-    def __init__(self, tol: float = 1e-6):
+    def __init__(self, tol: float = 1e-6) -> None:
         self.tol = tol
 
-    def should_stop(self, iteration: int, best_fit: float, fitness_history: list[float]) -> bool:
-        return best_fit < self.tol
+    def debe_parar(self, iteracion: int, mejor_fitness: float, historial: list[float]) -> bool:
+        return mejor_fitness < self.tol
 
-    def reset(self) -> None:
+    def reiniciar(self) -> None:
         pass
 
 
-class Stagnation(StopCriterion):
+class Estancamiento(CriterioParada):
     """
     Para cuando el mejor fitness no mejora más de `tol`
-    durante `patience` iteraciones consecutivas.
+    durante `paciencia` iteraciones consecutivas.
     """
 
-    def __init__(self, patience: int = 50, tol: float = 1e-8):
-        self.patience = patience
+    def __init__(self, paciencia: int = 50, tol: float = 1e-8) -> None:
+        self.paciencia = paciencia
         self.tol = tol
-        self._counter = 0
-        self._last_best = float("inf")
+        self._contador = 0
+        self._ultimo_mejor = float("inf")
 
-    def should_stop(self, iteration: int, best_fit: float, fitness_history: list[float]) -> bool:
-        if abs(self._last_best - best_fit) < self.tol:
-            self._counter += 1
+    def debe_parar(self, iteracion: int, mejor_fitness: float, historial: list[float]) -> bool:
+        if abs(self._ultimo_mejor - mejor_fitness) < self.tol:
+            self._contador += 1
         else:
-            self._counter = 0
-            self._last_best = best_fit
-        return self._counter >= self.patience
+            self._contador = 0
+            self._ultimo_mejor = mejor_fitness
+        return self._contador >= self.paciencia
 
-    def reset(self) -> None:
-        self._counter = 0
-        self._last_best = float("inf")
+    def reiniciar(self) -> None:
+        self._contador = 0
+        self._ultimo_mejor = float("inf")

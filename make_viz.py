@@ -3,23 +3,20 @@
 Genera visualizaciones a partir de los resultados guardados.
 
 Uso:
-    python make_viz.py --type convergence
+    python make_viz.py --type convergencia
     python make_viz.py --type speedup
-    python make_viz.py --type swarm --fn sphere --dim 2
-    python make_viz.py --type all_functions --dim 10
+    python make_viz.py --type enjambre --fn sphere --dim 2
+    python make_viz.py --type todas_funciones --dim 10
     python make_viz.py --type boxplot --dim 10
 """
 import argparse
 import logging
 import numpy as np
-from objectives.sphere import Sphere
-from objectives.rosenbrock import Rosenbrock
-from objectives.rastrigin import Rastrigin
-from objectives.ackley import Ackley
+from objectives.functions import Sphere, Rosenbrock, Rastrigin, Ackley
 from parallel.sequential import SequentialEvaluator
 from parallel.threading_eval import ThreadingEvaluator
 from parallel.process_eval import ProcessEvaluator
-from experiments.runner import run_experiment
+from experiments.runner import ejecutar_experimento
 from viz.convergence import plot_convergence, plot_speedup, plot_convergence_all_functions, plot_boxplot
 from viz.swarm_plot import animate_swarm_2d
 
@@ -28,192 +25,187 @@ logging.basicConfig(
     format="%(asctime)s | %(levelname)s | %(name)s | %(message)s"
 )
 
-FUNCTIONS = {
+FUNCIONES = {
     "sphere":     Sphere,
     "rosenbrock": Rosenbrock,
     "rastrigin":  Rastrigin,
     "ackley":     Ackley,
 }
 
-EVALUATORS = {
+EVALUADORES = {
     "V0_Sequential": SequentialEvaluator,
     "V1_Threading":  ThreadingEvaluator,
     "V2_Process":    ProcessEvaluator,
 }
 
-SEEDS = [42, 123, 456, 789, 1000]
+SEMILLAS = [42, 123, 456, 789, 1000]
 
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Generar visualizaciones PSO")
     parser.add_argument(
-        "--type", type=str, default="convergence",
-        choices=["convergence", "speedup", "swarm", "all_functions", "boxplot"],
+        "--type", type=str, default="convergencia",
+        choices=["convergencia", "speedup", "enjambre", "todas_funciones", "boxplot"],
         help="Tipo de visualización"
     )
-    parser.add_argument("--fn",   type=str, default="sphere", choices=FUNCTIONS.keys())
-    parser.add_argument("--dim",  type=int, default=10)
-    parser.add_argument("--seed", type=int, default=42)
-    parser.add_argument("--save", action="store_true", help="Guardar figura en results/")
+    parser.add_argument("--fn",      type=str, default="sphere", choices=FUNCIONES.keys())
+    parser.add_argument("--dim",     type=int, default=10)
+    parser.add_argument("--semilla", type=int, default=42)
+    parser.add_argument("--guardar", action="store_true", help="Guardar figura en results/")
     return parser.parse_args()
 
 
-def viz_convergence(args: argparse.Namespace) -> None:
+def viz_convergencia(args: argparse.Namespace) -> None:
     """Compara curvas de convergencia de V0, V1 y V2."""
-    objective_fn = FUNCTIONS[args.fn](dim=args.dim)
-    histories: dict[str, list[float]] = {}
+    funcion_objetivo = FUNCIONES[args.fn](dim=args.dim)
+    historiales: dict[str, list[float]] = {}
 
-    for name, EvalClass in EVALUATORS.items():
-        evaluator = EvalClass()
-        result = run_experiment(
-            objective_fn=objective_fn,
-            evaluator=evaluator,
-            seed=args.seed,
+    for nombre, ClaseEval in EVALUADORES.items():
+        evaluador = ClaseEval()
+        resultado = ejecutar_experimento(
+            funcion_objetivo=funcion_objetivo,
+            evaluador=evaluador,
+            semilla=args.semilla,
         )
-        histories[name] = result["fitness_history"]
+        historiales[nombre] = resultado["historial_fitness"]
         print(
-            f"{name}: gbest={result['gbest_fit']:.4e} | "
-            f"t_total={result['elapsed_seconds']:.3f}s | "
-            f"t_eval={result['time_eval']:.3f}s | "
-            f"t_update={result['time_update']:.3f}s | "
-            f"overhead={result['overhead']:.3f}s"
+            f"{nombre}: fitness={resultado['fitness_global']:.4e} | "
+            f"t_total={resultado['tiempo_total']:.3f}s | "
+            f"t_eval={resultado['tiempo_evaluacion']:.3f}s | "
+            f"t_update={resultado['tiempo_actualizacion']:.3f}s | "
+            f"overhead={resultado['overhead']:.3f}s"
         )
 
-    output_path = f"results/convergence_{args.fn}_d{args.dim}.png" if args.save else None
+    ruta = f"results/convergencia_{args.fn}_d{args.dim}.png" if args.guardar else None
     plot_convergence(
-        histories,
+        historiales,
         title=f"Convergencia — {args.fn} d={args.dim}",
-        output_path=output_path,
+        output_path=ruta,
     )
 
 
 def viz_speedup(args: argparse.Namespace) -> None:
     """Compara speedup de V0, V1 y V2."""
-    objective_fn = FUNCTIONS[args.fn](dim=args.dim)
-    times: dict[str, float] = {}
+    funcion_objetivo = FUNCIONES[args.fn](dim=args.dim)
+    tiempos: dict[str, float] = {}
 
-    for name, EvalClass in EVALUATORS.items():
-        evaluator = EvalClass()
-        result = run_experiment(
-            objective_fn=objective_fn,
-            evaluator=evaluator,
-            seed=args.seed,
+    for nombre, ClaseEval in EVALUADORES.items():
+        evaluador = ClaseEval()
+        resultado = ejecutar_experimento(
+            funcion_objetivo=funcion_objetivo,
+            evaluador=evaluador,
+            semilla=args.semilla,
         )
-        times[name] = result["elapsed_seconds"]
-        print(f"{name}: {result['elapsed_seconds']:.3f}s")
+        tiempos[nombre] = resultado["tiempo_total"]
+        print(f"{nombre}: {resultado['tiempo_total']:.3f}s")
 
-    output_path = f"results/speedup_{args.fn}_d{args.dim}.png" if args.save else None
+    ruta = f"results/speedup_{args.fn}_d{args.dim}.png" if args.guardar else None
     plot_speedup(
-        times,
+        tiempos,
         title=f"Speedup — {args.fn} d={args.dim}",
-        output_path=output_path,
+        output_path=ruta,
     )
 
 
-def viz_all_functions(args: argparse.Namespace) -> None:
-    """Convergencia de V0 en las 4 funciones benchmark en un solo plot 2x2."""
-    evaluator = SequentialEvaluator()
-    results: dict[str, dict[str, list[float]]] = {}
+def viz_todas_funciones(args: argparse.Namespace) -> None:
+    """Convergencia de las 4 funciones benchmark en un solo plot 2x2."""
+    resultados: dict[str, dict[str, list[float]]] = {}
 
-    for fn_name, FnClass in FUNCTIONS.items():
-        objective_fn = FnClass(dim=args.dim)
-        results[f"{fn_name} d={args.dim}"] = {}
+    for nombre_fn, ClaseFn in FUNCIONES.items():
+        funcion_objetivo = ClaseFn(dim=args.dim)
+        resultados[f"{nombre_fn} d={args.dim}"] = {}
 
-        for eval_name, EvalClass in EVALUATORS.items():
-            evaluator = EvalClass()
-            result = run_experiment(
-                objective_fn=objective_fn,
-                evaluator=evaluator,
-                seed=args.seed,
+        for nombre_eval, ClaseEval in EVALUADORES.items():
+            evaluador = ClaseEval()
+            resultado = ejecutar_experimento(
+                funcion_objetivo=funcion_objetivo,
+                evaluador=evaluador,
+                semilla=args.semilla,
             )
-            results[f"{fn_name} d={args.dim}"][eval_name] = result["fitness_history"]
-            print(f"{fn_name} d={args.dim} | {eval_name}: gbest={result['gbest_fit']:.4e}")
+            resultados[f"{nombre_fn} d={args.dim}"][nombre_eval] = resultado["historial_fitness"]
+            print(f"{nombre_fn} d={args.dim} | {nombre_eval}: fitness={resultado['fitness_global']:.4e}")
 
-    output_path = f"results/all_functions_d{args.dim}.png" if args.save else None
+    ruta = f"results/todas_funciones_d{args.dim}.png" if args.guardar else None
     plot_convergence_all_functions(
-        results,
+        resultados,
         title=f"Convergencia por función — d={args.dim}",
-        output_path=output_path,
+        output_path=ruta,
     )
 
 
 def viz_boxplot(args: argparse.Namespace) -> None:
-    """
-    Boxplot del fitness final sobre múltiples seeds.
-    Muestra la distribución de resultados de cada estrategia
-    para cada función benchmark.
-    """
-    results_by_strategy: dict[str, dict[str, list[float]]] = {}
+    """Boxplot del fitness final sobre múltiples semillas."""
+    resultados_por_estrategia: dict[str, dict[str, list[float]]] = {}
 
-    for fn_name, FnClass in FUNCTIONS.items():
-        objective_fn = FnClass(dim=args.dim)
-        results_by_strategy[f"{fn_name} d={args.dim}"] = {
-            name: [] for name in EVALUATORS
+    for nombre_fn, ClaseFn in FUNCIONES.items():
+        funcion_objetivo = ClaseFn(dim=args.dim)
+        resultados_por_estrategia[f"{nombre_fn} d={args.dim}"] = {
+            nombre: [] for nombre in EVALUADORES
         }
 
-        for seed in SEEDS:
-            for eval_name, EvalClass in EVALUATORS.items():
-                evaluator = EvalClass()
-                result = run_experiment(
-                    objective_fn=objective_fn,
-                    evaluator=evaluator,
-                    seed=seed,
+        for semilla in SEMILLAS:
+            for nombre_eval, ClaseEval in EVALUADORES.items():
+                evaluador = ClaseEval()
+                resultado = ejecutar_experimento(
+                    funcion_objetivo=funcion_objetivo,
+                    evaluador=evaluador,
+                    semilla=semilla,
                 )
-                results_by_strategy[f"{fn_name} d={args.dim}"][eval_name].append(
-                    result["gbest_fit"]
+                resultados_por_estrategia[f"{nombre_fn} d={args.dim}"][nombre_eval].append(
+                    resultado["fitness_global"]
                 )
-                print(f"{fn_name} d={args.dim} | {eval_name} | seed={seed}: gbest={result['gbest_fit']:.4e}")
+                print(f"{nombre_fn} | {nombre_eval} | semilla={semilla}: fitness={resultado['fitness_global']:.4e}")
 
-    output_path = f"results/boxplot_d{args.dim}.png" if args.save else None
+    ruta = f"results/boxplot_d{args.dim}.png" if args.guardar else None
     plot_boxplot(
-        results_by_strategy,
-        title=f"Distribución fitness final — d={args.dim} ({len(SEEDS)} seeds)",
-        output_path=output_path,
+        resultados_por_estrategia,
+        title=f"Distribución fitness final — d={args.dim} ({len(SEMILLAS)} semillas)",
+        output_path=ruta,
     )
 
 
-def viz_swarm(args: argparse.Namespace) -> None:
+def viz_enjambre(args: argparse.Namespace) -> None:
     """Genera animación 2D del enjambre (solo para dim=2)."""
     if args.dim != 2:
         print("La animación del enjambre solo está disponible para dim=2.")
         return
 
-    from core.swarm import Swarm
-    from core.stopcriteria import Stagnation
+    from core.swarm import Enjambre
+    from core.stopcriteria import Estancamiento
 
-    objective_fn = FUNCTIONS[args.fn](dim=2)
-    evaluator = SequentialEvaluator()
+    funcion_objetivo = FUNCIONES[args.fn](dim=2)
+    evaluador = SequentialEvaluator()
 
-    swarm = Swarm(
-        objective_fn=objective_fn,
-        evaluator=evaluator,
-        n_particles=30,
-        seed=args.seed,
-        stop_criterion=Stagnation(patience=50),
+    enjambre = Enjambre(
+        funcion_objetivo=funcion_objetivo,
+        evaluador=evaluador,
+        num_particulas=30,
+        semilla=args.semilla,
+        criterio_parada=Estancamiento(paciencia=50),
     )
 
-    result = swarm.run()
+    resultado = enjambre.ejecutar()
 
-    output_path = f"results/swarm_{args.fn}_d2.gif" if args.save else None
+    ruta = f"results/enjambre_{args.fn}_d2.gif" if args.guardar else None
     animate_swarm_2d(
-        objective_fn=objective_fn,
-        position_history=result["position_history"],
-        gbest_history=result["gbest_history"],
-        output_path=output_path,
+        objective_fn=funcion_objetivo,
+        position_history=resultado["historial_posiciones"],
+        gbest_history=resultado["historial_mejor_global"],
+        output_path=ruta,
     )
 
 
 def main() -> None:
     args = parse_args()
 
-    if args.type == "convergence":
-        viz_convergence(args)
+    if args.type == "convergencia":
+        viz_convergencia(args)
     elif args.type == "speedup":
         viz_speedup(args)
-    elif args.type == "swarm":
-        viz_swarm(args)
-    elif args.type == "all_functions":
-        viz_all_functions(args)
+    elif args.type == "enjambre":
+        viz_enjambre(args)
+    elif args.type == "todas_funciones":
+        viz_todas_funciones(args)
     elif args.type == "boxplot":
         viz_boxplot(args)
 

@@ -1,10 +1,7 @@
 # tests/test_objectives.py
 import numpy as np
 import pytest
-from objectives.sphere import Sphere
-from objectives.rosenbrock import Rosenbrock
-from objectives.rastrigin import Rastrigin
-from objectives.ackley import Ackley
+from objectives.functions import Sphere, Rosenbrock, Rastrigin, Ackley
 
 
 def test_sphere_minimum():

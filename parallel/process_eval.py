@@ -2,8 +2,8 @@
 import numpy as np
 import multiprocessing
 from concurrent.futures import ProcessPoolExecutor
-from .base_evaluator import FitnessEvaluator
-from objectives.base import ObjectiveFunction
+from .sequential import FitnessEvaluator
+from objectives.functions import ObjectiveFunction
 
 
 def _evaluate_batch(args: tuple) -> list[float]:

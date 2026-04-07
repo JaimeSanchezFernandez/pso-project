@@ -1,7 +1,4 @@
 # objectives/__init__.py
-from .sphere import Sphere
-from .rosenbrock import Rosenbrock
-from .rastrigin import Rastrigin
-from .ackley import Ackley
+from .functions import ObjectiveFunction, Sphere, Rosenbrock, Rastrigin, Ackley
 
-__all__ = ["Sphere", "Rosenbrock", "Rastrigin", "Ackley"]
+__all__ = ["ObjectiveFunction", "Sphere", "Rosenbrock", "Rastrigin", "Ackley"]

@@ -1,8 +1,8 @@
 # parallel/threading_eval.py — V1
 import numpy as np
 from concurrent.futures import ThreadPoolExecutor
-from .base_evaluator import FitnessEvaluator
-from objectives.base import ObjectiveFunction
+from .sequential import FitnessEvaluator
+from objectives.functions import ObjectiveFunction
 
 
 class ThreadingEvaluator(FitnessEvaluator):
