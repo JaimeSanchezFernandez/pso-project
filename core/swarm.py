@@ -1,6 +1,7 @@
 # core/swarm.py
 import numpy as np
 import logging
+import time
 from .particle import Particle
 from .topology import Topology, GlobalBest
 from .stopcriteria import StopCriterion, MaxIterations
@@ -33,7 +34,7 @@ class Swarm:
         topology: Topology = None,
         stop_criterion: StopCriterion = None,
         seed: int = None,
-    ):
+    ) -> None:
         self.objective_fn = objective_fn
         self.evaluator = evaluator
         self.n_particles = n_particles
@@ -50,11 +51,19 @@ class Swarm:
         self.gbest_fit: float = float("inf")
         self.fitness_history: list[float] = []
 
+        # Historial de posiciones y gbest para visualización
+        self.position_history: list[np.ndarray] = []
+        self.gbest_history: list[np.ndarray] = []
+
+        # Timings desglosados
+        self.time_eval: float = 0.0
+        self.time_update: float = 0.0
+        self.time_total: float = 0.0
+
     def _initialize(self) -> None:
         """Inicializa posiciones y velocidades aleatorias dentro de los límites."""
         lb = self.objective_fn.lower_bounds
         ub = self.objective_fn.upper_bounds
-        dim = self.objective_fn.dim
 
         self.particles = []
         for _ in range(self.n_particles):
@@ -99,16 +108,30 @@ class Swarm:
         """
         Ejecuta el PSO hasta que el criterio de parada se cumple.
 
+        Instrumentación de tiempos:
+        - time_eval   : tiempo acumulado en evaluación de fitness
+        - time_update : tiempo acumulado en actualización de partículas
+        - time_total  : tiempo total de ejecución
+
         Returns
         -------
-        dict con gbest_fit, gbest_pos, fitness_history y n_iterations
+        dict con gbest_fit, gbest_pos, fitness_history, timings y n_iterations
         """
         self.stop_criterion.reset()
         self._initialize()
+        self.time_eval = 0.0
+        self.time_update = 0.0
+        self.position_history = []
+        self.gbest_history = []
+
+        t_total_start = time.perf_counter()
 
         # Evaluación inicial
         positions = np.array([p.position for p in self.particles])
+
+        t0 = time.perf_counter()
         fitnesses = self.evaluator.evaluate(positions, self.objective_fn)
+        self.time_eval += time.perf_counter() - t0
 
         for particle, fit in zip(self.particles, fitnesses):
             particle.update_personal_best(fit)
@@ -117,18 +140,31 @@ class Swarm:
         self.gbest_fit = min(p.pbest_fit for p in self.particles)
         self.fitness_history = [self.gbest_fit]
 
-        logger.info(f"PSO iniciado | particles={self.n_particles} | seed={self.seed}")
+        logger.info(
+            f"PSO iniciado | particles={self.n_particles} | seed={self.seed}"
+        )
 
         iteration = 0
         while not self.stop_criterion.should_stop(iteration, self.gbest_fit, self.fitness_history):
+
+            # Registrar historial para visualización
+            self.position_history.append(
+                np.array([p.position.copy() for p in self.particles])
+            )
+            self.gbest_history.append(self.gbest_pos.copy())
+
             # Actualizar velocidades y posiciones
+            t0 = time.perf_counter()
             for particle in self.particles:
                 self._update_velocity(particle, self.gbest_pos)
                 self._update_position(particle)
+            self.time_update += time.perf_counter() - t0
 
             # Evaluar fitness
             positions = np.array([p.position for p in self.particles])
+            t0 = time.perf_counter()
             fitnesses = self.evaluator.evaluate(positions, self.objective_fn)
+            self.time_eval += time.perf_counter() - t0
 
             # Actualizar pbest y gbest
             for particle, fit in zip(self.particles, fitnesses):
@@ -139,14 +175,30 @@ class Swarm:
             self.fitness_history.append(self.gbest_fit)
 
             iteration += 1
-            logger.debug(f"iter={iteration} | gbest_fit={self.gbest_fit:.6e}")
+            logger.debug(
+                f"iter={iteration} | gbest_fit={self.gbest_fit:.6e} | "
+                f"t_eval={self.time_eval:.4f}s | t_update={self.time_update:.4f}s"
+            )
 
-        logger.info(f"PSO finalizado | iter={iteration} | gbest_fit={self.gbest_fit:.6e}")
+        self.time_total = time.perf_counter() - t_total_start
+        overhead = self.time_total - self.time_eval - self.time_update
+
+        logger.info(
+            f"PSO finalizado | iter={iteration} | gbest_fit={self.gbest_fit:.6e} | "
+            f"t_total={self.time_total:.4f}s | t_eval={self.time_eval:.4f}s | "
+            f"t_update={self.time_update:.4f}s | overhead={overhead:.4f}s"
+        )
 
         return {
-            "gbest_fit": self.gbest_fit,
-            "gbest_pos": self.gbest_pos,
-            "fitness_history": self.fitness_history,
-            "n_iterations": iteration,
-            "seed": self.seed,
+            "gbest_fit":        self.gbest_fit,
+            "gbest_pos":        self.gbest_pos,
+            "fitness_history":  self.fitness_history,
+            "n_iterations":     iteration,
+            "seed":             self.seed,
+            "time_eval":        self.time_eval,
+            "time_update":      self.time_update,
+            "time_total":       self.time_total,
+            "overhead":         overhead,
+            "position_history": self.position_history,
+            "gbest_history":    self.gbest_history,
         }

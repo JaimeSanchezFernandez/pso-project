@@ -80,6 +80,10 @@ def _append_to_csv(result: dict, csv_path: Path) -> None:
         "gbest_fit":        result.get("gbest_fit"),
         "n_iterations":     result.get("n_iterations"),
         "elapsed_seconds":  result.get("elapsed_seconds"),
+        "time_eval":        result.get("time_eval"),
+        "time_update":      result.get("time_update"),
+        "time_total":       result.get("time_total"),
+        "overhead":         result.get("overhead"),
     }
 
     write_header = not csv_path.exists()
