@@ -14,9 +14,8 @@ venv/
 .venv/
 env/
 
-# Resultados (excepto ejemplos)
+# Resultados (excepto summary CSV)
 results/*.json
-results/*.csv
 
 # VS Code
 .vscode/
